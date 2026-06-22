@@ -14,7 +14,7 @@
 # Signal — Turn the noise of user feedback into a prioritized roadmap
 <!-- 💡 One sharp sentence beats a paragraph here. A reviewer decides in 5 seconds whether to keep reading. -->
 **An AI agent that reads hundreds of scattered, messy user-feedback items and produces an evidence-backed, prioritized roadmap brief — with every recommendation traceable to the exact feedback that supports it, and a human-in-the-loop checkpoint before anything is finalized.**
-[🔗 **Live demo**](https://signal-theta-ten.vercel.app/) · [📹 **90-second walkthrough**](#) · [🧪 **Eval results**](#7-evaluation--how-i-measured-quality)
+[🔗 **Live demo**](https://signal-theta-ten.vercel.app/) · [📹 **90-second walkthrough**](#) · [🧪 **Eval results**](#7-evaluation--how-i-measured-quality) · [🗺️ **Architecture graph**](https://signal-theta-ten.vercel.app/architecture.html)
 <!-- 💡 A clickable live demo + a short video are the two highest-leverage things in this whole repo. A reviewer will click, not clone. Prioritize getting these live. -->
 > **Why this exists, in one breath:** Product teams drown in feedback across support tickets, app reviews, surveys, and sales calls. Synthesizing it into a roadmap takes days of manual reading and is biased toward whatever's loudest or most recent. Signal does the synthesis in minutes, uniformly across every item, and hands the PM a defensible starting point — not a black-box answer.
 ---
@@ -286,12 +286,25 @@ signal/
 │   ├── golden_set.csv             # hand-labeled test set (you fill the correct_* columns)
 │   ├── run-eval.ts                # eval harness (npm run eval) — Phase 4
 │   └── results.md                 # metrics + failure-mode analysis
+├── graphify-out/                  # architecture graph (report + interactive HTML + JSON)
+├── public/architecture.html       # the interactive graph, served live at /architecture.html
 ├── .env.example                   # template for your OPENAI_API_KEY
 ├── package.json
 └── next.config.ts
 ```
 <!-- 💡 Files marked "Phases 1+/Phase 4" are stubbed in later phases; the folders above
      describe the target structure. Phase 0 ships the scaffold, design system, and data. -->
+
+### Architecture graph
+
+Generated with [graphify](https://github.com/sponsors/safishamsi) (deterministic AST
+extraction over `src/` — 78 nodes, 161 edges, 6 communities, 0 import cycles). It maps
+the real call graph: the API route → `analyzeFeedback` → the per-item agent loop
+(`analyzeItemWithAgent`) → the `lookup_known_issues` tool, schema validation, and the
+shared scoring formula.
+
+- 📄 [`graphify-out/GRAPH_REPORT.md`](graphify-out/GRAPH_REPORT.md) — the report (renders on GitHub)
+- 🗺️ Interactive graph: [`graphify-out/graph.html`](graphify-out/graph.html) (download/open) · **live at [/architecture.html](https://signal-theta-ten.vercel.app/architecture.html)**
 ---
 ## 15. Appendix
 <!-- 💡 Optional but impressive. Showing your actual rubric + a prompt sample lets a reviewer see the craft underneath. -->

@@ -40,3 +40,9 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# graphify internals (the published artifacts graph.html / GRAPH_REPORT.md /
+# graph.json are committed; these are machine-specific or regenerated)
+graphify-out/.graphify_*
+graphify-out/cost.json
+graphify-out/manifest.json
