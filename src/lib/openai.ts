@@ -28,6 +28,11 @@ function client(): OpenAI {
   return _client;
 }
 
+/** The raw client, for the per-item agent loop (tool calling). Server-only. */
+export function openaiClient(): OpenAI {
+  return client();
+}
+
 export const MODELS = {
   cheap: process.env.SIGNAL_MODEL_CHEAP || "gpt-4o-mini",
   smart: process.env.SIGNAL_MODEL_SMART || "gpt-4o",

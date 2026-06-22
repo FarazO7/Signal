@@ -1,9 +1,12 @@
 /**
- * Presentational view of a Brief. No data fetching here — it just renders.
- * Dense content (theme details, the raw-items table) uses FLAT surfaces per the
- * design system; neumorphism is reserved for chrome (rank chips, the page).
+ * Presentational view of a Brief. No data fetching here. Dense content uses
+ * FLAT surfaces per the design system; neumorphism is reserved for chrome.
+ *
+ * `finalized` reflects whether the human has resolved every flagged item — the
+ * brief is shown as a DRAFT until then (status by color + icon, never shadow).
  */
 import type { Brief, Severity, Sentiment } from "@/lib/types";
+import Trace from "./Trace";
 
 const SEV: Record<Severity, { label: string; cls: string }> = {
   4: { label: "Critical", cls: "text-sev-4" },
@@ -23,11 +26,33 @@ function SeverityBadge({ s }: { s: Severity }) {
   return <span className={`badge ${SEV[s].cls}`}>{SEV[s].label}</span>;
 }
 
-export default function BriefView({ brief }: { brief: Brief }) {
+export default function BriefView({
+  brief,
+  finalized,
+}: {
+  brief: Brief;
+  finalized: boolean;
+}) {
   const byId = new Map(brief.items.map((i) => [i.id, i]));
 
   return (
     <div>
+      {/* Draft / finalized status — color + icon, not shadow */}
+      <div
+        className="surface-flat mb-4 flex items-center gap-2 border-l-4 p-3 text-sm"
+        style={{ borderLeftColor: finalized ? "var(--pos)" : "var(--sev-3)" }}
+        role="status"
+      >
+        {finalized ? (
+          <span className="font-semibold text-pos">✓ Brief finalized</span>
+        ) : (
+          <span className="font-semibold text-sev-3">
+            ● Draft — resolve the {brief.flagged_count} flagged{" "}
+            {brief.flagged_count === 1 ? "item" : "items"} above to finalize
+          </span>
+        )}
+      </div>
+
       {/* Summary */}
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <h2 className="text-xl font-bold tracking-tight text-ink">
@@ -35,7 +60,7 @@ export default function BriefView({ brief }: { brief: Brief }) {
         </h2>
         <p className="text-xs text-ink-subtle">
           {brief.item_count} items · {brief.themes.length} themes ·{" "}
-          {new Date(brief.generated_at).toLocaleString()}
+          {brief.flagged_count} flagged · {new Date(brief.generated_at).toLocaleString()}
         </p>
       </div>
       <p className="mt-1 text-sm text-ink-muted">
@@ -76,7 +101,7 @@ export default function BriefView({ brief }: { brief: Brief }) {
                 )}
 
                 {/* Evidence — native disclosure (keyboard-accessible) */}
-                <details className="mt-2 group">
+                <details className="mt-2">
                   <summary className="cursor-pointer text-sm font-medium text-accent">
                     Evidence ({t.member_ids.length})
                   </summary>
@@ -89,6 +114,9 @@ export default function BriefView({ brief }: { brief: Brief }) {
                           <span className="font-mono text-xs text-ink-subtle">
                             {it.id} · {it.channel}
                           </span>
+                          {it.known_issue && (
+                            <span className="badge ml-2 text-accent">{it.known_issue.id}</span>
+                          )}
                           <p className="text-ink-muted">“{it.text}”</p>
                         </li>
                       );
@@ -101,10 +129,10 @@ export default function BriefView({ brief }: { brief: Brief }) {
         ))}
       </ol>
 
-      {/* Raw classified items — the "watch raw feedback become a brief" view */}
+      {/* Raw classified items + per-item agent trace */}
       <details className="mt-6">
         <summary className="cursor-pointer text-sm font-semibold text-ink-muted">
-          Show all {brief.item_count} classified items
+          Show all {brief.item_count} classified items (with agent trace)
         </summary>
         <div className="surface-flat mt-3 overflow-x-auto">
           <table className="w-full text-left text-sm">
@@ -114,12 +142,13 @@ export default function BriefView({ brief }: { brief: Brief }) {
                 <th className="px-3 py-2 font-semibold">Area</th>
                 <th className="px-3 py-2 font-semibold">Sentiment</th>
                 <th className="px-3 py-2 font-semibold">Sev</th>
-                <th className="px-3 py-2 font-semibold">Core ask</th>
+                <th className="px-3 py-2 font-semibold">Conf.</th>
+                <th className="px-3 py-2 font-semibold">Status</th>
               </tr>
             </thead>
-            <tbody className="text-ink-muted">
-              {brief.items.map((it) => (
-                <tr key={it.id} className="border-b border-line/70 last:border-0 align-top">
+            {brief.items.map((it) => (
+              <tbody key={it.id}>
+                <tr className="border-t border-line/70 align-top">
                   <td className="px-3 py-2 font-mono text-xs text-ink">{it.id}</td>
                   <td className="px-3 py-2">{it.classification.feature_area}</td>
                   <td className="px-3 py-2">
@@ -130,10 +159,31 @@ export default function BriefView({ brief }: { brief: Brief }) {
                   <td className="px-3 py-2">
                     <SeverityBadge s={it.classification.severity} />
                   </td>
-                  <td className="px-3 py-2">{it.classification.core_ask}</td>
+                  <td className="px-3 py-2 font-mono text-xs tabular-nums">
+                    {it.confidence.toFixed(2)}
+                  </td>
+                  <td className="px-3 py-2">
+                    {it.flagged ? (
+                      <span className="badge text-sev-3">Flagged</span>
+                    ) : (
+                      <span className="badge text-pos">Auto</span>
+                    )}
+                  </td>
                 </tr>
-              ))}
-            </tbody>
+                <tr>
+                  <td colSpan={6} className="px-3 pb-3">
+                    <details>
+                      <summary className="cursor-pointer text-xs font-medium text-accent">
+                        Agent trace
+                      </summary>
+                      <div className="mt-2 border-l-2 border-line pl-3">
+                        <Trace item={it} />
+                      </div>
+                    </details>
+                  </td>
+                </tr>
+              </tbody>
+            ))}
           </table>
         </div>
       </details>

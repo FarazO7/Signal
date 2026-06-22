@@ -29,9 +29,41 @@ export interface Classification {
   core_ask: string;
 }
 
-/** A feedback item joined with its classification. */
+/** A reference to a matched entry in the known-issues store. */
+export interface KnownIssueRef {
+  id: string;
+  title: string;
+  status: string;
+  severity: number;
+}
+
+/** One step the agent took on an item — what the trace view renders. */
+export interface TraceStep {
+  step: number;
+  type: "model" | "tool_call" | "tool_result" | "decision";
+  summary: string;
+  detail?: string;
+}
+
+/**
+ * A feedback item joined with the agent's full analysis: its classification,
+ * confidence, any known-issue match, whether it was flagged for human review,
+ * and the inspectable trace of steps it took.
+ */
 export interface AnalyzedItem extends FeedbackItem {
   classification: Classification;
+  /** Model-reported confidence, 0–1 (clamped). */
+  confidence: number;
+  /** Set when the agent's lookup_known_issues call matched a tracked issue. */
+  known_issue: KnownIssueRef | null;
+  /** The agent's one-line rationale for its classification. */
+  reasoning: string;
+  /** True when the item needs a human to look before the brief is final. */
+  flagged: boolean;
+  /** Why it was flagged (or null if auto-accepted). */
+  flag_reason: string | null;
+  /** The agent's step-by-step trace for this item. */
+  trace: TraceStep[];
 }
 
 /**
@@ -58,8 +90,15 @@ export interface Theme {
 export interface Brief {
   generated_at: string;
   item_count: number;
+  /** How many items were flagged for human review. */
+  flagged_count: number;
+  /** The confidence threshold below which items are flagged (for display). */
+  confidence_threshold: number;
   /** Every analyzed item, so the UI can show "raw feedback → brief". */
   items: AnalyzedItem[];
   /** Themes, already sorted by score (highest priority first). */
   themes: Theme[];
 }
+
+/** Items below this confidence are flagged for human review (README Decision 5). */
+export const CONFIDENCE_THRESHOLD = 0.65;

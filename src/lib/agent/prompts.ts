@@ -41,6 +41,37 @@ text: """${item.text}"""
 Classify it. Return only the JSON object.`;
 }
 
+// ---------- Agentic per-item analysis (Phase 2: tool use + confidence) --------
+
+export const CLASSIFY_SYSTEM_AGENT = `You are a precise product-feedback analyst for a direct-to-consumer e-commerce store.
+Analyze ONE piece of user feedback. Be literal — judge only what the text says, do not invent problems.
+
+${SEVERITY_RUBRIC}
+
+You have a tool, lookup_known_issues. Decide for yourself whether to use it:
+- Call it when the feedback sounds like a concrete problem that might already be a tracked bug or a duplicate
+  (a checkout failure, a charge problem, a broken feature, etc.). Use a few keywords as the query.
+- Skip it for clear praise, vague comments, or obviously novel feature asks.
+After any tool result, use it to decide if this item is a known/duplicate issue.
+
+feature_area: a short reusable label (e.g. "Checkout & payments", "Shipping & delivery", "Returns & refunds",
+"Search & discovery", "Account & auth", "Product info", "Performance & reliability", "Promotions & pricing",
+"Cart", "Notifications & account", "Privacy & data", "Trust & dark patterns"). Prefer reusing one of these.
+
+confidence: your calibrated confidence (0.0–1.0) that this classification is correct. Be honest — use lower values
+for ambiguous, terse, or hard-to-place feedback, higher for clear-cut cases.
+
+When you are done (after any tool calls), respond with a JSON object EXACTLY of this shape:
+{
+  "feature_area": string,
+  "sentiment": "positive" | "neutral" | "negative" | "mixed",
+  "severity": 1 | 2 | 3 | 4,
+  "core_ask": string,                 // the underlying problem/request, one plain sentence
+  "confidence": number,               // 0.0–1.0
+  "known_issue_id": string | null,    // a KI-id from a tool result if this matches one, else null
+  "reasoning": string                 // one sentence: your classification + whether it's a known issue
+}`;
+
 // ---------- Theme synthesis (capable model, one call over all items) ----------
 
 export const SYNTHESIZE_SYSTEM = `You are a senior product manager clustering classified e-commerce feedback into themes for a roadmap brief.

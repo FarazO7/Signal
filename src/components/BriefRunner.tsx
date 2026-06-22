@@ -1,24 +1,32 @@
 "use client";
 
 /**
- * Client component that drives one analysis run: button → POST /api/analyze →
- * render the brief. Holds only UI state; all model work happens server-side.
+ * Drives one analysis run and the human-in-the-loop review:
+ *   button → POST /api/analyze → review flagged items → finalized brief.
+ *
+ * Severity overrides from the review feed back into the deterministic theme
+ * scores via the shared scoring helper (no formula duplicated). All model work
+ * happens server-side; this holds only UI/review state.
  */
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import BriefView from "./Brief";
-import type { Brief } from "@/lib/types";
+import ReviewPanel from "./ReviewPanel";
+import { aggregateSeverities } from "@/lib/scoring";
+import type { Brief, Severity } from "@/lib/types";
 
-type State =
-  | { phase: "idle" }
-  | { phase: "loading" }
-  | { phase: "error"; message: string }
-  | { phase: "done"; brief: Brief };
+type Status = "idle" | "loading" | "error" | "done";
 
 export default function BriefRunner() {
-  const [state, setState] = useState<State>({ phase: "idle" });
+  const [status, setStatus] = useState<Status>("idle");
+  const [brief, setBrief] = useState<Brief | null>(null);
+  const [errorMsg, setErrorMsg] = useState("");
+  const [reviewed, setReviewed] = useState<Set<string>>(new Set());
+  const [overrides, setOverrides] = useState<Record<string, Severity>>({});
 
   async function run() {
-    setState({ phase: "loading" });
+    setStatus("loading");
+    setReviewed(new Set());
+    setOverrides({});
     try {
       const res = await fetch("/api/analyze", {
         method: "POST",
@@ -27,61 +35,101 @@ export default function BriefRunner() {
       });
       const data = await res.json();
       if (!res.ok) {
-        setState({ phase: "error", message: data?.error ?? "Analysis failed." });
+        setErrorMsg(data?.error ?? "Analysis failed.");
+        setStatus("error");
         return;
       }
-      setState({ phase: "done", brief: data as Brief });
+      setBrief(data as Brief);
+      setStatus("done");
     } catch (err) {
-      setState({
-        phase: "error",
-        message: err instanceof Error ? err.message : "Network error.",
-      });
+      setErrorMsg(err instanceof Error ? err.message : "Network error.");
+      setStatus("error");
     }
   }
+
+  const flaggedItems = useMemo(
+    () => (brief ? brief.items.filter((i) => i.flagged) : []),
+    [brief],
+  );
+
+  const finalized =
+    flaggedItems.length === 0 || flaggedItems.every((i) => reviewed.has(i.id));
+
+  // Apply severity overrides and recompute theme scores from the data.
+  const effectiveBrief = useMemo<Brief | null>(() => {
+    if (!brief) return null;
+    const sevById = new Map(
+      brief.items.map((i) => [i.id, overrides[i.id] ?? i.classification.severity]),
+    );
+    const items = brief.items.map((i) => ({
+      ...i,
+      classification: { ...i.classification, severity: sevById.get(i.id)! },
+    }));
+    const themes = brief.themes
+      .map((t) => ({
+        ...t,
+        ...aggregateSeverities(t.member_ids.map((id) => sevById.get(id)!)),
+      }))
+      .sort((a, b) => b.score - a.score);
+    return { ...brief, items, themes };
+  }, [brief, overrides]);
 
   return (
     <div>
       <div className="flex flex-wrap items-center gap-3">
-        <button className="btn-primary" onClick={run} disabled={state.phase === "loading"}>
-          {state.phase === "loading"
+        <button className="btn-primary" onClick={run} disabled={status === "loading"}>
+          {status === "loading"
             ? "Analyzing…"
-            : state.phase === "done"
+            : status === "done"
               ? "Re-run analysis"
               : "Load sample feedback"}
         </button>
-        {state.phase === "idle" && (
+        {status === "idle" && (
           <span className="text-sm text-ink-subtle">
             50 sample e-commerce items · runs server-side with your OpenAI key
           </span>
         )}
       </div>
 
-      {state.phase === "loading" && (
+      {status === "loading" && (
         <div className="nm-inset mt-5 p-5" role="status" aria-live="polite">
           <p className="text-sm font-medium text-ink">
-            Classifying each item, then clustering into themes…
+            Running the agent on each item, then clustering into themes…
           </p>
           <p className="mt-1 text-sm text-ink-muted">
-            One model call per item (50) + one synthesis call. This usually takes
-            10–20 seconds.
+            Each item is classified and may call the lookup_known_issues tool;
+            low-confidence ones get flagged for your review. Usually ~20–40
+            seconds for 50 items.
           </p>
         </div>
       )}
 
-      {state.phase === "error" && (
+      {status === "error" && (
         <div
           className="surface-flat mt-5 border-l-4 p-4"
           style={{ borderLeftColor: "var(--neg)" }}
           role="alert"
         >
           <p className="font-semibold text-ink">Couldn’t finish the analysis</p>
-          <p className="mt-1 text-sm text-ink-muted">{state.message}</p>
+          <p className="mt-1 text-sm text-ink-muted">{errorMsg}</p>
         </div>
       )}
 
-      {state.phase === "done" && (
-        <div className="mt-6">
-          <BriefView brief={state.brief} />
+      {status === "done" && effectiveBrief && (
+        <div className="mt-6 space-y-6">
+          {flaggedItems.length > 0 && (
+            <ReviewPanel
+              items={flaggedItems}
+              reviewed={reviewed}
+              overrides={overrides}
+              onApprove={(id) => setReviewed((p) => new Set(p).add(id))}
+              onApproveAll={() => setReviewed(new Set(flaggedItems.map((i) => i.id)))}
+              onOverride={(id, severity) =>
+                setOverrides((p) => ({ ...p, [id]: severity }))
+              }
+            />
+          )}
+          <BriefView brief={effectiveBrief} finalized={finalized} />
         </div>
       )}
     </div>

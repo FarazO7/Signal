@@ -1,10 +1,10 @@
 /**
- * Phase 1 — end-to-end skeleton.
+ * Phase 2 — the agent.
  *
  * Header + hero are static chrome (server component). The live app is the
- * <BriefRunner/> client component: load sample feedback → classify each item →
- * synthesize themes → render a basic prioritized brief. Tools, confidence, and
- * the agent-trace view arrive in Phase 2.
+ * <BriefRunner/> client component: load sample feedback → per-item agent loop
+ * (lookup_known_issues tool + confidence) → human-in-the-loop review of flagged
+ * items → finalized, ranked brief, with an inspectable trace per item.
  */
 import BriefRunner from "@/components/BriefRunner";
 
@@ -38,7 +38,7 @@ export default function Home() {
             <p className="text-xs text-ink-subtle">feedback noise → prioritized roadmap</p>
           </div>
         </div>
-        <span className="badge text-accent">Phase 1 · end-to-end skeleton</span>
+        <span className="badge text-accent">Phase 2 · agent, confidence &amp; trace</span>
       </header>
 
       {/* ---------- Hero ---------- */}
