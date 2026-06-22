@@ -1,26 +1,215 @@
 @import "tailwindcss";
 
+/* =============================================================================
+   SIGNAL — DESIGN SYSTEM (accessible Neumorphism: "skin, not skeleton")
+   -----------------------------------------------------------------------------
+   The full rationale lives in design-system/MASTER.md. This file is the
+   single source of truth the app actually renders from.
+
+   Core idea: soft, tactile surfaces that look extruded from ONE low-saturation
+   background, using the classic recipe — two shadows (light top-left, dark
+   bottom-right) on a same-color background. Neumorphism is used as a PREMIUM
+   ACCENT (cards, panels, toggles, secondary controls), never as the whole UI.
+   Dense data (tables, long text) uses FLAT, high-contrast surfaces instead.
+   ============================================================================= */
+
+/* ---------- 1. Design tokens (the light theme is primary) ------------------ */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Neumorphic canvas — bg and raised surfaces share the SAME color (required
+     for the extruded look). Not pure white, so there's room for a highlight
+     and a shadow on the same plane. */
+  --bg: #e7ebf2;
+  --surface: #e7ebf2;
+
+  /* Flat surface for data-dense areas (tables, long text). High contrast,
+     near-white, NOT neumorphic. */
+  --surface-flat: #f7f9fc;
+  --line: #d3d9e4; /* hairline borders for flat surfaces */
+
+  /* Ink (text) — all pass WCAG AA on the --bg canvas */
+  --ink: #1e2530;        /* primary text   ~12:1 */
+  --ink-muted: #4c5564;  /* secondary text ~6:1  */
+  --ink-subtle: #69717f; /* non-essential  ~3.4:1 (labels/icons only) */
+
+  /* Accent — primary actions are FLAT + filled with this, never neumorphic */
+  --accent: #4f46e5;       /* indigo-600; white text on it ~6.3:1 */
+  --accent-hover: #4338ca; /* indigo-700 */
+  --accent-ink: #ffffff;
+
+  /* Neumorphic shadow pair (top-left light source) */
+  --nm-light: rgba(255, 255, 255, 0.95);
+  --nm-dark: rgba(160, 174, 199, 0.6);
+
+  /* Severity ramp 4→1 — used as text/icon + tinted background, NEVER as the
+     only signal. Always paired with a label or icon. */
+  --sev-4: #dc2626; /* critical */
+  --sev-3: #ea580c; /* high     */
+  --sev-2: #d97706; /* medium   */
+  --sev-1: #64748b; /* low      */
+
+  /* Sentiment */
+  --pos: #15803d;
+  --neg: #b91c1c;
+  --neu: #475569;
+
+  /* Radii + motion */
+  --r-sm: 10px;
+  --r-md: 16px;
+  --r-lg: 22px;
+  --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --t-fast: 160ms;
+  --t: 220ms;
 }
 
+/* ---------- 2. Expose tokens to Tailwind utilities -------------------------- */
+/* Lets us write bg-surface, text-ink, text-ink-muted, bg-accent, etc. */
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-flat: var(--surface-flat);
+  --color-line: var(--line);
+  --color-ink: var(--ink);
+  --color-ink-muted: var(--ink-muted);
+  --color-ink-subtle: var(--ink-subtle);
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-ink: var(--accent-ink);
+  --color-sev-4: var(--sev-4);
+  --color-sev-3: var(--sev-3);
+  --color-sev-2: var(--sev-2);
+  --color-sev-1: var(--sev-1);
+  --color-pos: var(--pos);
+  --color-neg: var(--neg);
+  --color-neu: var(--neu);
+
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+/* ---------- 3. Base -------------------------------------------------------- */
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-sans), system-ui, sans-serif;
+}
+
+/* ACCESSIBILITY GUARDRAIL: visible keyboard focus on every interactive element. */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* ACCESSIBILITY GUARDRAIL: respect reduced-motion. Transitions stay 150–300ms
+   for everyone else (set per-component below). */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+/* ---------- 4. Neumorphic surfaces (the "skin") ---------------------------- */
+@layer components {
+  /* Raised card / panel — extruded from the canvas. */
+  .nm-raised {
+    background: var(--surface);
+    border-radius: var(--r-lg);
+    box-shadow:
+      8px 8px 18px var(--nm-dark),
+      -8px -8px 18px var(--nm-light);
+  }
+  .nm-raised-sm {
+    background: var(--surface);
+    border-radius: var(--r-md);
+    box-shadow:
+      5px 5px 11px var(--nm-dark),
+      -5px -5px 11px var(--nm-light);
+  }
+  /* Pressed / inset — looks carved INTO the canvas. */
+  .nm-inset {
+    background: var(--surface);
+    border-radius: var(--r-md);
+    box-shadow:
+      inset 5px 5px 11px var(--nm-dark),
+      inset -5px -5px 11px var(--nm-light);
+  }
+
+  /* FLAT, high-contrast surface for tables and dense text (NOT neumorphic). */
+  .surface-flat {
+    background: var(--surface-flat);
+    border: 1px solid var(--line);
+    border-radius: var(--r-md);
+  }
+
+  /* ---------- 5. Controls -------------------------------------------------- */
+  /* PRIMARY action — FLAT + filled accent. Never a low-contrast neumorphic
+     button. State change is COLOR (not shadow alone). */
+  .btn-primary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    background: var(--accent);
+    color: var(--accent-ink);
+    font-weight: 600;
+    padding: 0.625rem 1.1rem;
+    border-radius: var(--r-sm);
+    transition: background var(--t-fast) var(--ease);
+  }
+  .btn-primary:hover {
+    background: var(--accent-hover);
+  }
+  .btn-primary:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  /* SECONDARY / toggle — neumorphic, tactile. Raised by default; presses to
+     inset on :active. GUARDRAIL: the pressed/selected state also flips text
+     color to accent, so it never relies on shadow alone. */
+  .btn-soft {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    background: var(--surface);
+    color: var(--ink-muted);
+    font-weight: 600;
+    padding: 0.6rem 1rem;
+    border-radius: var(--r-sm);
+    box-shadow:
+      5px 5px 11px var(--nm-dark),
+      -5px -5px 11px var(--nm-light);
+    transition:
+      box-shadow var(--t-fast) var(--ease),
+      color var(--t-fast) var(--ease);
+  }
+  .btn-soft:hover {
+    color: var(--ink);
+  }
+  .btn-soft:active,
+  .btn-soft[data-pressed="true"] {
+    color: var(--accent);
+    box-shadow:
+      inset 4px 4px 9px var(--nm-dark),
+      inset -4px -4px 9px var(--nm-light);
+  }
+
+  /* ---------- 6. Badges (color + LABEL, never color alone) ----------------- */
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    line-height: 1;
+    padding: 0.3rem 0.55rem;
+    border-radius: var(--r-sm);
+    border: 1px solid currentColor;
+    background: color-mix(in srgb, currentColor 10%, transparent);
+  }
 }

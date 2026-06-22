@@ -1,0 +1,52 @@
+[
+  {
+    "id": "KI-001",
+    "title": "Saved-card checkout fails on iOS",
+    "area": "Checkout & payments",
+    "status": "in_progress",
+    "severity": 4,
+    "first_seen": "2026-04-18",
+    "summary": "Tapping the pay/checkout button does nothing when a previously saved card is selected on the iOS app. Workaround: delete and re-enter the card. Fix in progress with payments vendor.",
+    "keywords": ["saved card", "checkout button", "does nothing", "ios", "re-enter card", "pay now"]
+  },
+  {
+    "id": "KI-002",
+    "title": "Valid promo codes rejected as 'invalid'",
+    "area": "Promotions & pricing",
+    "status": "investigating",
+    "severity": 3,
+    "first_seen": "2026-04-25",
+    "summary": "Some non-expired promo/discount codes intermittently return 'invalid code' at the cart, more often on Safari. Suspected case-sensitivity + caching issue in the coupon service.",
+    "keywords": ["promo code", "discount code", "invalid code", "save20", "coupon", "won't apply"]
+  },
+  {
+    "id": "KI-003",
+    "title": "Duplicate charge / double authorization",
+    "area": "Checkout & payments",
+    "status": "investigating",
+    "severity": 4,
+    "first_seen": "2026-04-29",
+    "summary": "A small number of orders create two identical authorizations on the customer's card when the confirmation step is retried after a timeout. Under active investigation with the payment processor; manual refunds issued case by case.",
+    "keywords": ["charged twice", "double charge", "duplicate charge", "two charges", "double-charged", "pending holds"]
+  },
+  {
+    "id": "KI-004",
+    "title": "Return-label generator returns 404",
+    "area": "Returns & refunds",
+    "status": "open",
+    "severity": 3,
+    "first_seen": "2026-05-01",
+    "summary": "The self-service return-label endpoint 404s for orders shipped via one carrier integration, blocking self-service returns. Customers must contact support for a manual label.",
+    "keywords": ["return label", "404", "returns", "label generator", "can't return"]
+  },
+  {
+    "id": "KI-005",
+    "title": "Push notification opt-out not respected",
+    "area": "Notifications & account",
+    "status": "open",
+    "severity": 2,
+    "first_seen": "2026-05-04",
+    "summary": "Disabling push notifications in-app does not persist across app updates; users are re-subscribed and receive high notification volume. Fix scoped, not yet started.",
+    "keywords": ["push notifications", "too many notifications", "turned them off", "opt out", "re-subscribed"]
+  }
+]
