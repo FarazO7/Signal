@@ -14,7 +14,7 @@
 # Signal — Turn the noise of user feedback into a prioritized roadmap
 <!-- 💡 One sharp sentence beats a paragraph here. A reviewer decides in 5 seconds whether to keep reading. -->
 **An AI agent that reads hundreds of scattered, messy user-feedback items and produces an evidence-backed, prioritized roadmap brief — with every recommendation traceable to the exact feedback that supports it, and a human-in-the-loop checkpoint before anything is finalized.**
-[🔗 **Live demo**](https://your-app.vercel.app) · [📹 **90-second walkthrough**](#) · [🧪 **Eval results**](#7-evaluation--how-i-measured-quality)
+[🔗 **Live demo**](https://signal-theta-ten.vercel.app/) · [📹 **90-second walkthrough**](#) · [🧪 **Eval results**](#7-evaluation--how-i-measured-quality)
 <!-- 💡 A clickable live demo + a short video are the two highest-leverage things in this whole repo. A reviewer will click, not clone. Prioritize getting these live. -->
 > **Why this exists, in one breath:** Product teams drown in feedback across support tickets, app reviews, surveys, and sales calls. Synthesizing it into a roadmap takes days of manual reading and is biased toward whatever's loudest or most recent. Signal does the synthesis in minutes, uniformly across every item, and hands the PM a defensible starting point — not a black-box answer.
 ---
