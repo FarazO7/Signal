@@ -86,6 +86,16 @@ export interface Theme {
   score: number;
 }
 
+/** What the grounding + schema guardrails caught during a run (README §9). */
+export interface BriefGuardrails {
+  /** Themes the model proposed that cited no real feedback — dropped. */
+  themes_dropped: number;
+  /** Member-id citations that pointed at no real item — dropped. */
+  hallucinated_refs_dropped: number;
+  /** Total schema re-requests across the run (parse/validation violations). */
+  schema_rerequests: number;
+}
+
 /** The full output of one analysis run. */
 export interface Brief {
   generated_at: string;
@@ -94,6 +104,8 @@ export interface Brief {
   flagged_count: number;
   /** The confidence threshold below which items are flagged (for display). */
   confidence_threshold: number;
+  /** Grounding + schema guardrail tallies. */
+  guardrails: BriefGuardrails;
   /** Every analyzed item, so the UI can show "raw feedback → brief". */
   items: AnalyzedItem[];
   /** Themes, already sorted by score (highest priority first). */

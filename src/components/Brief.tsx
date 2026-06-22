@@ -69,6 +69,17 @@ export default function BriefView({
         Every theme lists the real feedback behind it.
       </p>
 
+      {/* Guardrail tallies (README §9): grounding + schema enforcement */}
+      <p className="mt-2 text-xs text-ink-subtle">
+        <span className="font-semibold text-pos">Guardrails:</span> every theme
+        cites real feedback · {brief.guardrails.hallucinated_refs_dropped} invented
+        citation{brief.guardrails.hallucinated_refs_dropped === 1 ? "" : "s"} dropped ·{" "}
+        {brief.guardrails.themes_dropped} ungrounded theme
+        {brief.guardrails.themes_dropped === 1 ? "" : "s"} dropped ·{" "}
+        {brief.guardrails.schema_rerequests} schema re-request
+        {brief.guardrails.schema_rerequests === 1 ? "" : "s"}
+      </p>
+
       {/* Themes */}
       <ol className="mt-5 space-y-3">
         {brief.themes.map((t, i) => (

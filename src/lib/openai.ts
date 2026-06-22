@@ -10,6 +10,8 @@
  */
 import "server-only";
 import OpenAI from "openai";
+import { z } from "zod";
+import { formatZodError } from "./agent/schema";
 
 /** Thrown when the key is missing, so the API route can return a clear 400. */
 export class MissingApiKeyError extends Error {
@@ -39,42 +41,72 @@ export const MODELS = {
 };
 
 /**
- * Call a model and parse a JSON object from the response.
+ * Call a model and validate its JSON against a Zod schema (README §9,
+ * Decision 4). On a parse OR schema violation we send the model a corrective
+ * message and re-request, up to `maxAttempts`. Returns the validated data, or
+ * null if it never produced schema-valid output, plus the re-request count.
  *
- * Phase 1: we request JSON mode and do one retry on a parse failure. The strict
- * schema validation + re-request loop (README §9) is added in Phase 3.
+ * (OpenAI's native Structured Outputs is an alternative; we validate explicitly
+ * here so the guardrail — and the re-request on violation — is visible in code.)
  */
-export async function chatJSON<T>(opts: {
+export async function chatValidated<T>(opts: {
   model: string;
   system: string;
   user: string;
+  schema: z.ZodType<T>;
   temperature?: number;
-}): Promise<T> {
-  const { model, system, user, temperature = 0.2 } = opts;
+  maxAttempts?: number;
+}): Promise<{ data: T | null; rerequests: number }> {
+  const { model, system, user, schema, temperature = 0.2, maxAttempts = 3 } = opts;
+  const messages: OpenAI.Chat.Completions.ChatCompletionMessageParam[] = [
+    { role: "system", content: system },
+    { role: "user", content: user },
+  ];
 
-  for (let attempt = 1; attempt <= 2; attempt++) {
+  let rerequests = 0;
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     const res = await client().chat.completions.create({
       model,
       temperature,
       response_format: { type: "json_object" },
-      messages: [
-        { role: "system", content: system },
-        { role: "user", content: user },
-      ],
+      messages,
     });
     const content = res.choices[0]?.message?.content ?? "";
+
+    let parsed: unknown;
     try {
-      return JSON.parse(content) as T;
+      parsed = JSON.parse(content);
     } catch {
-      if (attempt === 2) {
-        throw new Error(
-          `Model did not return valid JSON after 2 attempts (model: ${model}).`,
-        );
-      }
+      parsed = undefined;
     }
+
+    if (parsed !== undefined) {
+      const result = schema.safeParse(parsed);
+      if (result.success) return { data: result.data, rerequests };
+      if (attempt < maxAttempts) {
+        rerequests++;
+        messages.push({ role: "assistant", content });
+        messages.push({
+          role: "user",
+          content: `Your JSON did not match the required schema: ${formatZodError(
+            result.error,
+          )}. Return ONLY a corrected JSON object that matches the schema.`,
+        });
+        continue;
+      }
+    } else if (attempt < maxAttempts) {
+      rerequests++;
+      messages.push({ role: "assistant", content });
+      messages.push({
+        role: "user",
+        content: "Your reply was not valid JSON. Return ONLY a valid JSON object.",
+      });
+      continue;
+    }
+    break; // final attempt failed validation
   }
-  // Unreachable, but satisfies the type checker.
-  throw new Error("chatJSON: exhausted attempts");
+
+  return { data: null, rerequests };
 }
 
 /**

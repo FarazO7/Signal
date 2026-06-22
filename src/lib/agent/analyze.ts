@@ -1,11 +1,16 @@
 /**
  * The analysis pipeline (server-only):
- *   per-item AGENT loop (tool use + confidence + flag) → synthesize themes →
- *   score & rank deterministically.
+ *   per-item AGENT loop (tool use + confidence + schema-validated) →
+ *   synthesize themes (schema-validated) → GROUND (cite-or-drop) → rank.
+ *
+ * Guardrails (README §9): every model response is validated against a schema
+ * with a re-request on violation, and every theme must cite ≥1 real source item
+ * or it is dropped.
  */
-import { chatJSON, MODELS, mapWithConcurrency } from "../openai";
+import { chatValidated, MODELS, mapWithConcurrency } from "../openai";
 import { analyzeItemWithAgent } from "./loop";
 import { SYNTHESIZE_SYSTEM, synthesizeUser } from "./prompts";
+import { SynthesisSchema } from "./schema";
 import { aggregateSeverities } from "../scoring";
 import {
   CONFIDENCE_THRESHOLD,
@@ -16,10 +21,10 @@ import {
 } from "../types";
 
 interface RawTheme {
-  label?: string;
-  feature_area?: string;
-  suggested_action?: string;
-  member_ids?: unknown;
+  label: string;
+  feature_area: string;
+  suggested_action: string;
+  member_ids: string[];
 }
 
 function buildTheme(
@@ -40,19 +45,32 @@ function buildTheme(
   };
 }
 
+interface AssembleResult {
+  themes: Theme[];
+  themesDropped: number;
+  hallucinatedRefs: number;
+}
+
 /**
- * Build final themes: keep only real, not-yet-used member ids, compute
- * frequency + severity + score from the data, and sort by score.
+ * GROUNDING (cite-or-drop): keep only real, not-yet-used member ids; compute
+ * frequency/severity/score from the data; sort by score. Any theme left with no
+ * real citation is dropped, and citations to non-existent items are counted.
  */
-function assembleThemes(analyzed: AnalyzedItem[], rawThemes: RawTheme[]): Theme[] {
+function assembleThemes(analyzed: AnalyzedItem[], rawThemes: RawTheme[]): AssembleResult {
   const byId = new Map(analyzed.map((a) => [a.id, a]));
   const used = new Set<string>();
   const themes: Theme[] = [];
+  let themesDropped = 0;
+  let hallucinatedRefs = 0;
 
   for (const rt of rawThemes) {
     const ids = Array.isArray(rt.member_ids) ? rt.member_ids.map(String) : [];
+    hallucinatedRefs += ids.filter((id) => !byId.has(id)).length;
     const members = ids.filter((id) => byId.has(id) && !used.has(id));
-    if (members.length === 0) continue;
+    if (members.length === 0) {
+      themesDropped++; // ungrounded — cite-or-drop
+      continue;
+    }
     members.forEach((id) => used.add(id));
     themes.push(buildTheme(rt.label, rt.feature_area, rt.suggested_action, members, byId));
   }
@@ -70,19 +88,20 @@ function assembleThemes(analyzed: AnalyzedItem[], rawThemes: RawTheme[]): Theme[
     themes.push(buildTheme(`${area} — other reports`, area, "Review these individually.", ids, byId));
   }
 
-  return themes.sort((a, b) => b.score - a.score);
+  return { themes: themes.sort((a, b) => b.score - a.score), themesDropped, hallucinatedRefs };
 }
 
 /** Run the full pipeline over a batch of feedback. */
 export async function analyzeFeedback(items: FeedbackItem[]): Promise<Brief> {
-  // 1. Per-item agent loop (tool use + confidence + flagging). Bounded
-  //    concurrency — each item may make multiple model calls.
+  // 1. Per-item agent loop (tool use + confidence + schema validation).
   const analyses = await mapWithConcurrency(items, 4, (it) => analyzeItemWithAgent(it));
   const analyzed: AnalyzedItem[] = items.map((it, i) => ({ ...it, ...analyses[i] }));
+  const itemRerequests = analyses.reduce((sum, a) => sum + a.rerequests, 0);
 
-  // 2. Synthesize themes from the compact classified rows.
-  const { themes: rawThemes } = await chatJSON<{ themes: RawTheme[] }>({
+  // 2. Synthesize themes — validated against the schema, with re-request.
+  const { data: synthesis, rerequests: synRerequests } = await chatValidated({
     model: MODELS.smart,
+    schema: SynthesisSchema,
     system: SYNTHESIZE_SYSTEM,
     user: synthesizeUser(
       analyzed.map((a) => ({
@@ -94,14 +113,23 @@ export async function analyzeFeedback(items: FeedbackItem[]): Promise<Brief> {
     ),
   });
 
-  // 3. Assemble + rank deterministically.
-  const themes = assembleThemes(analyzed, Array.isArray(rawThemes) ? rawThemes : []);
+  // 3. Ground + rank. If synthesis never validated, themes is empty and every
+  //    item falls through to the grounded leftover buckets — still a valid brief.
+  const { themes, themesDropped, hallucinatedRefs } = assembleThemes(
+    analyzed,
+    synthesis?.themes ?? [],
+  );
 
   return {
     generated_at: new Date().toISOString(),
     item_count: analyzed.length,
     flagged_count: analyzed.filter((a) => a.flagged).length,
     confidence_threshold: CONFIDENCE_THRESHOLD,
+    guardrails: {
+      themes_dropped: themesDropped,
+      hallucinated_refs_dropped: hallucinatedRefs,
+      schema_rerequests: itemRerequests + synRerequests,
+    },
     items: analyzed,
     themes,
   };

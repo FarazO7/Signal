@@ -1,10 +1,11 @@
 /**
- * Phase 2 — the agent.
+ * Phase 3 — guardrails on top of the agent.
  *
  * Header + hero are static chrome (server component). The live app is the
  * <BriefRunner/> client component: load sample feedback → per-item agent loop
- * (lookup_known_issues tool + confidence) → human-in-the-loop review of flagged
- * items → finalized, ranked brief, with an inspectable trace per item.
+ * (lookup_known_issues tool + confidence + schema-validated output) →
+ * human-in-the-loop review → grounded (cite-or-drop), ranked brief, with an
+ * inspectable trace per item.
  */
 import BriefRunner from "@/components/BriefRunner";
 
@@ -38,7 +39,7 @@ export default function Home() {
             <p className="text-xs text-ink-subtle">feedback noise → prioritized roadmap</p>
           </div>
         </div>
-        <span className="badge text-accent">Phase 2 · agent, confidence &amp; trace</span>
+        <span className="badge text-accent">Phase 3 · grounding &amp; schema guardrails</span>
       </header>
 
       {/* ---------- Hero ---------- */}
