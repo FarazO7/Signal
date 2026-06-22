@@ -64,13 +64,13 @@ npm run lint         # eslint
 
 ## Build phases (per the kickoff)
 
-0. ✅ Scaffold + design system + sample data (this commit)
-1. End-to-end skeleton — classify each item → rough themes → basic brief
-2. Real agent — `lookup_known_issues` tool, confidence scoring, human-in-the-loop,
+0. ✅ Scaffold + design system + sample data
+1. ✅ End-to-end skeleton — classify each item → rough themes → basic brief
+2. ✅ Real agent — `lookup_known_issues` tool, confidence scoring, human-in-the-loop,
    inspectable agent-trace view
-3. Guardrails — grounding (cite-or-drop) + enforced structured output
-4. Evaluation — golden-set runner + metrics + `results.md`
-5. Polish + accessibility QA + Vercel deploy
+3. ✅ Guardrails — grounding (cite-or-drop) + enforced structured output
+4. ✅ Evaluation — golden-set runner (`npm run eval`) + metrics + `results.md`
+5. ✅ Polish + accessibility QA (deploy to Vercel is the owner's step — see README §13)
 6. (Optional) graphify architecture artifact
 
 Work one phase at a time; keep it runnable at each; pause for review between phases.

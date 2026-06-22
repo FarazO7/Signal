@@ -27,9 +27,9 @@
   --line: #d3d9e4; /* hairline borders for flat surfaces */
 
   /* Ink (text) — all pass WCAG AA on the --bg canvas */
-  --ink: #1e2530;        /* primary text   ~12:1 */
-  --ink-muted: #4c5564;  /* secondary text ~6:1  */
-  --ink-subtle: #69717f; /* non-essential  ~3.4:1 (labels/icons only) */
+  --ink: #1e2530;        /* primary text    ~12:1 */
+  --ink-muted: #4c5564;  /* secondary text  ~6.3:1 */
+  --ink-subtle: #5b6473; /* tertiary labels ~5:1 (AA for normal text) */
 
   /* Accent — primary actions are FLAT + filled with this, never neumorphic */
   --accent: #4f46e5;       /* indigo-600; white text on it ~6.3:1 */
@@ -40,17 +40,18 @@
   --nm-light: rgba(255, 255, 255, 0.95);
   --nm-dark: rgba(160, 174, 199, 0.6);
 
-  /* Severity ramp 4→1 — used as text/icon + tinted background, NEVER as the
-     only signal. Always paired with a label or icon. */
-  --sev-4: #dc2626; /* critical */
-  --sev-3: #ea580c; /* high     */
-  --sev-2: #d97706; /* medium   */
-  --sev-1: #64748b; /* low      */
+  /* Severity ramp 4→1 — used as badge text/border + tinted background, NEVER as
+     the only signal (always paired with a label). Darkened so the small badge
+     text meets WCAG AA (≥4.5:1) on the canvas. */
+  --sev-4: #b91c1c; /* critical ~5.4:1 */
+  --sev-3: #b23c0c; /* high     ~5.0:1 */
+  --sev-2: #854d0e; /* medium   ~5.7:1 */
+  --sev-1: #475569; /* low      ~6.4:1 */
 
-  /* Sentiment */
-  --pos: #15803d;
-  --neg: #b91c1c;
-  --neu: #475569;
+  /* Sentiment (same AA constraint) */
+  --pos: #166534; /* ~6.0:1 */
+  --neg: #b91c1c; /* ~5.4:1 */
+  --neu: #475569; /* ~6.4:1 */
 
   /* Radii + motion */
   --r-sm: 10px;

@@ -1,5 +1,5 @@
 /**
- * Phase 3 — guardrails on top of the agent.
+ * Home page.
  *
  * Header + hero are static chrome (server component). The live app is the
  * <BriefRunner/> client component: load sample feedback → per-item agent loop
@@ -39,7 +39,7 @@ export default function Home() {
             <p className="text-xs text-ink-subtle">feedback noise → prioritized roadmap</p>
           </div>
         </div>
-        <span className="badge text-accent">Phase 3 · grounding &amp; schema guardrails</span>
+        <span className="badge text-accent">MVP · decision-support</span>
       </header>
 
       {/* ---------- Hero ---------- */}

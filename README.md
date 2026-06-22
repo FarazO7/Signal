@@ -242,6 +242,21 @@ npm run eval
 npm run build   # production build
 npm run lint    # eslint
 ```
+
+### Deploy to Vercel
+
+The app is deploy-ready — no extra config. To put it live:
+
+1. **Push to GitHub** (the local repo has no remote yet):
+   ```bash
+   git remote add origin https://github.com/<your-username>/signal.git
+   git push -u origin main
+   ```
+2. **Import to Vercel** — at [vercel.com/new](https://vercel.com/new), select the repo. The Next.js preset is auto-detected; nothing to change.
+3. **Set the key** — in the Vercel project's **Settings → Environment Variables**, add `OPENAI_API_KEY` (optionally `SIGNAL_MODEL_CHEAP` / `SIGNAL_MODEL_SMART`). It stays server-side; it is never exposed to the browser.
+4. **Deploy**, then update the live-demo link at the top of this README.
+
+> The `/api/analyze` route is configured for up to 60s (`maxDuration`); the sample runs the cheap model per item to stay well within that.
 ---
 ## 14. Repo structure
 ```

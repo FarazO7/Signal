@@ -43,15 +43,17 @@ Utility classes: `.nm-raised`, `.nm-raised-sm`, `.nm-inset`.
 | `--line` | `#d3d9e4` | Hairline borders on flat surfaces |
 | `--ink` | `#1e2530` | Primary text (~12:1 on canvas) |
 | `--ink-muted` | `#4c5564` | Secondary text (~6:1) |
-| `--ink-subtle` | `#69717f` | Labels / icons only (~3.4:1) |
+| `--ink-subtle` | `#5b6473` | Tertiary labels (~5:1, AA for text) |
 | `--accent` | `#4f46e5` | Primary actions, links, focus ring |
 | `--accent-hover` | `#4338ca` | Primary hover |
 | `--accent-ink` | `#ffffff` | Text on accent (~6.3:1) |
-| `--sev-4 … --sev-1` | red / orange / amber / slate | Severity ramp (critical→low) |
-| `--pos` / `--neu` / `--neg` | green / slate / red | Sentiment |
+| `--sev-4 … --sev-1` | `#b91c1c` / `#b23c0c` / `#854d0e` / `#475569` | Severity ramp (critical→low), all ≥4.5:1 |
+| `--pos` / `--neu` / `--neg` | `#166534` / `#475569` / `#b91c1c` | Sentiment, all ≥4.5:1 |
 
 **Severity and sentiment colors never carry meaning alone** — they always pair
-with a text label or icon (see badges).
+with a text label or icon (see badges). They are deliberately darkened so the
+small (12px) badge text meets WCAG AA on the canvas; the label, not the hue,
+is the primary signal.
 
 ---
 
