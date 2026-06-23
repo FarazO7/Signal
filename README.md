@@ -311,14 +311,41 @@ shared scoring formula.
 ### Severity rubric (used by the agent and by me when labeling the golden set)
 | Level | Label | Definition | Example |
 |---|---|---|---|
-| 4 | Critical | Blocks core use; data loss; churn risk | [FILL] |
-| 3 | High | Major friction; frequent workaround needed | [FILL] |
-| 2 | Medium | Noticeable annoyance; not blocking | [FILL] |
-| 1 | Low | Cosmetic / nice-to-have | [FILL] |
+| 4 | Critical | Blocks core use; data loss; churn risk | Payment fails at checkout, so the order can't be completed |
+| 3 | High | Major friction; frequent workaround needed | Search returns nothing for items that are in stock, so customers can't find productsSearch returns nothing for items that are in stock, so customers can't find products |
+| 2 | Medium | Noticeable annoyance; not blocking | Product images load slowly on the listing page |
+| 1 | Low | Cosmetic / nice-to-have | The wishlist icon is hard to spot in the top nav |
 ### Sample prompt (excerpt)
-[FILL: paste a representative prompt from `src/lib/agent/prompts.ts` so reviewers can see how you structure role + rubric + examples + output schema.]
+CLASSIFY_SYSTEM_AGENT = `You are a precise product-feedback analyst for a direct-to-consumer e-commerce store.
+Analyze ONE piece of user feedback. Be literal — judge only what the text says, do not invent problems.
+
+${SEVERITY_RUBRIC}
+
+You have a tool, lookup_known_issues. Decide for yourself whether to use it:
+- Call it when the feedback sounds like a concrete problem that might already be a tracked bug or a duplicate
+  (a checkout failure, a charge problem, a broken feature, etc.). Use a few keywords as the query.
+- Skip it for clear praise, vague comments, or obviously novel feature asks.
+After any tool result, use it to decide if this item is a known/duplicate issue.
+
+feature_area: a short reusable label (e.g. "Checkout & payments", "Shipping & delivery", "Returns & refunds",
+"Search & discovery", "Account & auth", "Product info", "Performance & reliability", "Promotions & pricing",
+"Cart", "Notifications & account", "Privacy & data", "Trust & dark patterns"). Prefer reusing one of these.
+
+confidence: your calibrated confidence (0.0–1.0) that this classification is correct. Be honest — use lower values
+for ambiguous, terse, or hard-to-place feedback, higher for clear-cut cases.
+
+When you are done (after any tool calls), respond with a JSON object EXACTLY of this shape:
+{
+  "feature_area": string,
+  "sentiment": "positive" | "neutral" | "negative" | "mixed",
+  "severity": 1 | 2 | 3 | 4,
+  "core_ask": string,                 // the underlying problem/request, one plain sentence
+  "confidence": number,               // 0.0–1.0
+  "known_issue_id": string | null,    // a KI-id from a tool result if this matches one, else null
+  "reasoning": string                 // one sentence: your classification + whether it's a known issue
+}`;
 ### Persona detail & JTBD
 See [Section 3](#3-who-this-is-for).
 ---
 <!-- 💡 Final reminder to delete the working-name "Signal", drop in your live demo + video links, and fill the [FILL] placeholders. Those three things are what convert a reviewer. -->
-*Built by [Your Name] · [LinkedIn](#) · [Portfolio](#) · An AI Product Manager who ships.*
+*Built by Faraz Ali · [LinkedIn](https://www.linkedin.com/in/-faraz/) · [Portfolio](https://faraz-website.vercel.app/) · An AI Product Manager who ships.*
