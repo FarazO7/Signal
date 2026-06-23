@@ -1,16 +1,3 @@
-<!--
-═══════════════════════════════════════════════════════════════════════════
- HOW TO USE THIS TEMPLATE  (this block is an HTML comment — it will NOT show
- when GitHub renders the page, so you can leave it in or delete it.)
- 1. Anything in [SQUARE BRACKETS] is a placeholder — replace it with your own
-    specifics (your domain, your real numbers, your decisions).
- 2. Comments like this one (<!-- 💡 ... -->) are coaching notes for you only.
-    They won't render. Read them, act on them, then delete or keep — your call.
- 3. Fill the numbers in AFTER you build + run your eval. Empty metrics are fine
-    while you're building; a portfolio reviewer just needs to see you measured.
- 4. Rename the project. I used "Signal" as a working name — make it yours.
-═══════════════════════════════════════════════════════════════════════════
--->
 # Signal — Turn the noise of user feedback into a prioritized roadmap
 <!-- 💡 One sharp sentence beats a paragraph here. A reviewer decides in 5 seconds whether to keep reading. -->
 **An AI agent that reads hundreds of scattered, messy user-feedback items and produces an evidence-backed, prioritized roadmap brief — with every recommendation traceable to the exact feedback that supports it, and a human-in-the-loop checkpoint before anything is finalized.**
