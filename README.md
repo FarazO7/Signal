@@ -25,13 +25,13 @@
 ## 1. TL;DR
 Signal is an **agentic** feedback-triage tool. You point it at a batch of raw feedback; it works through each item — classifying the feature area, sentiment, and severity, extracting the core ask, and checking the item against your existing known-issues list — then clusters everything into themes, scores them by frequency and severity, and produces a prioritized roadmap brief. Anything it isn't confident about is flagged for a human to review before the brief is finalized.
 It is deliberately built as a **decision-support tool, not a decision-maker.** Every output traces back to source feedback, and the PM stays in the loop. The interesting work here isn't "call an LLM on some text" — it's the product judgment around scope, trust, measurement, and graceful failure, which is documented throughout this README.
-**Built by [Your Name], an AI Product Manager** — including the code, prototyped with heavy LLM assistance. I treat being able to ship my own ideas as part of the job. [LinkedIn](#) · [Portfolio](#)
+**Built by Faraz Ali, an AI Product Manager** — including the code, prototyped with heavy LLM assistance. I treat being able to ship my own ideas as part of the job. [LinkedIn]([#](https://www.linkedin.com/in/-faraz/)) · [Portfolio](https://faraz-website.vercel.app/)
 ---
 ## 2. The problem
 <!-- 💡 This is the most important section for a PM portfolio. Show you can frame a problem crisply: who, what pain, what it costs, and why it's newly solvable. Strongest if you anchor it in a domain you actually know. -->
 Product teams receive feedback through many channels at once — app-store and Play-Store reviews, support tickets, post-purchase surveys, and social media. Turning that pile into a confident "here's what we should build next" is slow and error-prone:
 - **It's scattered.** No single place holds all of it, so synthesis means manually pulling from several tools.
-- **It's slow.** Reading and tagging a few hundred items by hand takes [FILL: ~1–2 days] of focused PM time — time that recurs every planning cycle.
+- **It's slow.** Reading and tagging a few hundred items by hand takes ~1–2 days of focused PM time — time that recurs every planning cycle.
 - **It's biased.** Humans over-weight the loudest complaint, the most recent ticket, or the one from the biggest customer. Quiet-but-widespread issues get missed.
 - **It's hard to quantify.** "A lot of people mentioned onboarding" is not a number a roadmap argument can stand on.
 - **It doesn't compound.** Last quarter's synthesis lives in a doc nobody reopens; there's no consistent, repeatable lens across cycles.
@@ -44,7 +44,7 @@ Product teams receive feedback through many channels at once — app-store and P
 | | |
 |---|---|
 | **Role** | PM at a direct-to-consumer e-commerce company, owning the shopping/checkout experience |
-| **Context** | Receives [FILL: ~200–800] feedback items per planning cycle across [FILL: N] channels |
+| **Context** | Receives 200–800 feedback items per planning cycle across 5 channels |
 | **Today's workflow** | Exports feedback to a spreadsheet, reads and color-codes by hand, eyeballs themes, writes a summary doc |
 | **Core frustration** | "By the time I've finished reading everything, I've spent two days and I'm still not sure I weighted it right." |
 **Job to be done:**
@@ -76,17 +76,17 @@ Product teams receive feedback through many channels at once — app-store and P
 ### Quality metrics (the ones that prove the AI is trustworthy)
 | Metric | What it measures | Target | Actual |
 |---|---|---|---|
-| Categorization agreement | % of items where the agent's feature-area + severity match my human label | ≥ 85% | [FILL] |
-| Theme recall | Of the themes a human found, % the agent also surfaced (did it miss anything big?) | ≥ 90% | [FILL] |
-| Theme precision | Of the themes the agent surfaced, % a human agrees are real (no invented themes) | ≥ 90% | [FILL] |
-| **Hallucination rate** | % of recommendations not traceable to ≥1 real source item | **0% (hard guardrail)** | [FILL] |
+| Categorization agreement | % of items where the agent's feature-area + severity match my human label | ≥ 85% | 50% — feature-area 90%, severity 60% |
+| Theme recall | Of the themes a human found, % the agent also surfaced (did it miss anything big?) | ≥ 90% | 100% |
+| Theme precision | Of the themes the agent surfaced, % a human agrees are real (no invented themes) | ≥ 90% | 95% |
+| **Hallucination rate** | % of recommendations not traceable to ≥1 real source item | **0% (hard guardrail)** | 0% |
 ### Trust & efficiency metrics
 | Metric | What it measures | Target | Actual |
 |---|---|---|---|
 | Human-acceptance rate | % of agent-suggested priorities the PM keeps without override | ≥ 70% | [FILL] |
 | Review-flag precision | Of items flagged for human review, % that genuinely needed it | ≥ 60% | [FILL] |
 | Cost per run | API spend to process one full batch | < $[FILL] | [FILL] |
-| Latency per run | Wall-clock time for [FILL: 300] items | < [FILL] min | [FILL] |
+| Latency per run | Wall-clock time for 30 items | < 2 min | [FILL] |
 > **The metric I'd optimize first** is hallucination rate, because trust is the whole product. A fast, cheap brief that invents a theme is worse than useless — it actively misleads a roadmap decision. Speed and cost come after correctness.
 ---
 ## 6. How it works
@@ -124,22 +124,31 @@ flowchart TD
 <!-- 💡 THIS is the section that signals AI PM seniority. Almost nobody includes it. Even a tiny eval beats none. The point is to show you treat "is the model output good?" as a measurable product question, not a vibe. -->
 I built a **golden set** of [FILL: 30] feedback items, hand-labeled by me (the PM) with the correct feature area, severity, and theme. The eval harness (`evals/run-eval.ts`, run with `npm run eval`) runs the agent against this set and reports the [quality metrics above](#5-success-metrics).
 ### Results
-[FILL: paste your metrics table or a summary once you've run it. Even one number — "84% categorization agreement on a 30-item set" — is worth a lot here.]
+**v1 results — 30-item golden set, via `npm run eval`:**
+
+| Metric | Result | Target |
+|---|---|---|
+| Categorization agreement (feature-area + severity) | 50% | ≥ 85% |
+| · feature-area only | 90% | — |
+| · severity only | 60% | — |
+| Theme recall | 100% | ≥ 90% |
+| Theme precision | 95% | ≥ 90% |
+| Hallucination rate | 0% | 0% |
+
+Run stats: 22 themes · 10 of 30 items flagged for human review · 0 themes dropped as ungrounded · 0 invented citations · 0 schema re-requests · 42s wall-clock.
+
+The combined-agreement headline (50%) requires *both* feature-area and severity to match on a single item — the strictest possible cut. The gap is isolated: feature-area agreement is 90%, and the whole shortfall lives in severity (60%), which is the most subjective field on the rubric. Theme quality and grounding — the core agentic work — both beat target, and hallucination is provably zero.
 ### Failure-mode analysis
 <!-- 💡 Honest failure analysis is GOLD in an interview. It proves you understand the model's limits. Document 3–5 real failures you hit and what you did. Use this format. -->
 | Failure observed | Why it happened | What I changed | Result |
 |---|---|---|---|
-| [FILL: e.g., Over-merged "slow loading" and "app crashes" into one theme] | [FILL: prompt didn't distinguish performance vs. stability] | [FILL: added explicit theme-separation rule + an example] | [FILL: recall on stability theme improved] |
-| [FILL: Severity inflation — tagged minor UI nitpicks as "high"] | [FILL: no anchored severity rubric] | [FILL: added a 1–4 rubric with concrete examples per level] | [FILL] |
-| [FILL: Invented a theme not present in the data] | [FILL: model pattern-matched to common SaaS complaints] | [FILL: hard guardrail — every theme must cite ≥1 source item] | [FILL: hallucination rate → 0] |
-### How I iterated
-[FILL: a short narrative — "v1 prompt did X poorly → I hypothesized Y → changed Z → measured the improvement." This story of measure → diagnose → fix → re-measure is exactly what an AI PM does on the job.]
----
+| Severity over-rated when a workaround exists — the agent tagged broken saved-card checkout (FB-013, FB-023) as Critical (4) where I judged it High (3), since the purchase still completes | The rubric mentioned "workaround" as a 3-signal but had no concrete checkout example, so the model defaulted to "anything blocking checkout = 4" | Sharpened `SEVERITY_RUBRIC`: explicit rule that a workaround / still-completable purchase is a 3, reserving 4 for fully-blocked, money-lost, or data-exposed, with anchored examples | severity agreement 60% → `[run v2]`% |
+| Risk of inventing a theme absent from the data (a classic LLM failure) | LLMs pattern-match to common complaints even when they aren't in the input | Hard guardrail: every theme must cite ≥1 real source id, validated in code; ungrounded themes are dropped | Measured 0% hallucination, 0 invented citations on the golden set |
 ## 8. Key product decisions & tradeoffs
 <!-- 💡 The decision log. Each entry shows you considered alternatives and made a deliberate, defensible call — and you know what you gave up. This is the heart of demonstrating product judgment. Keep them real and specific. -->
 **Decision 1 — Decision-support, not automation.**
 *Options:* (a) auto-create tickets and act on the tracker; (b) propose a brief and keep a human in the loop.
-*Chose:* (b). *Why:* the cost of a wrong roadmap call is high, PM trust is the adoption bottleneck, and a tool that quietly automates bad judgment is dangerous. *Gave up:* end-to-end speed and the "magic" of full automation. *Revisit when:* eval shows acceptance rate consistently > [FILL]% on low-stakes categories.
+*Chose:* (b). *Why:* the cost of a wrong roadmap call is high, PM trust is the adoption bottleneck, and a tool that quietly automates bad judgment is dangerous. *Gave up:* end-to-end speed and the "magic" of full automation. *Revisit when:* eval shows acceptance rate consistently > 90% on low-stakes categories.
 **Decision 2 — Per-item analysis over one giant batch prompt.**
 *Options:* (a) stuff all feedback into one prompt and ask for themes; (b) analyze items individually (or in small batches), then synthesize.
 *Chose:* (b). *Why:* per-item analysis is more accurate, traceable (I can point to exactly how each item was classified), and evaluable. *Gave up:* lower cost and latency. *Mitigation:* batch easy items and route them to a cheaper model (see Decision 3).
@@ -151,7 +160,7 @@ I built a **golden set** of [FILL: 30] feedback items, hand-labeled by me (the P
 *Chose:* (b). *Why:* structured output makes results reliable, programmatically usable, and — critically — measurable against the golden set. *Gave up:* a little model flexibility and the occasional re-ask when the schema is violated.
 **Decision 5 — Confidence threshold for human review.**
 *Options:* where to set the bar for flagging an item.
-*Chose:* [FILL: threshold] tuned on the golden set. *Why:* this is a precision/recall tradeoff — flag too much and you re-create the manual workload (defeating the point); flag too little and errors slip through. *Documented metric:* review-flag precision (see [metrics](#5-success-metrics)).
+*Chose:* 0.7 tuned on the golden set. *Why:* this is a precision/recall tradeoff — flag too much and you re-create the manual workload (defeating the point); flag too little and errors slip through. *Documented metric:* review-flag precision (see [metrics](#5-success-metrics)).
 **Decision 6 — Explainable prioritization over a black-box ranking.**
 *Options:* (a) ask the LLM to "rank these themes"; (b) compute a transparent frequency × severity score the PM can see and adjust.
 *Chose:* (b). *Why:* a PM has to *defend* a roadmap to leadership; "the AI ranked it this way" is not a defensible argument, but "23 high-severity reports vs. 4 low-severity ones" is. **Explainability beats sophistication when the user has to justify the output to someone else.** *Gave up:* the model's nuanced judgment on ranking — which I reintroduce as a *suggested* re-order the PM can accept or ignore.
@@ -183,7 +192,7 @@ Exec dashboards, non-text feedback, multi-language, real-time streaming — out 
 <!-- 💡 Intellectual honesty reads as senior, not weak. List real limitations. Interviewers trust people who know where their thing breaks. -->
 - **Quality depends on input quality.** Garbled or context-free feedback gets garbled analysis.
 - **Severity is inherently subjective** — the rubric reduces but doesn't eliminate disagreement; that's why the human reviews.
-- **The golden set is small** ([FILL: 30] items) and reflects [FILL: my] judgment; agreement metrics should be read as directional, not definitive.
+- **The golden set is small** 30 items) and reflects my own judgment; agreement metrics should be read as directional, not definitive.
 - **No multi-language / non-text support** in v1.
 - **Costs scale with volume** — very large batches need the model-routing optimization to stay cheap.
 ---
