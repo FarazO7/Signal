@@ -72,7 +72,7 @@ Product teams receive feedback through many channels at once — app-store and P
 <!-- 💡 For an AI product, QUALITY metrics are what separate you from a generic PM. Usage metrics alone are a red flag — they don't tell you if the thing is any good. Lead with quality and trust, not engagement. Fill targets in now; fill actuals after your eval. -->
 ### North-star metric
 **Time-to-insight:** wall-clock time from "raw feedback in" to "PM-approved roadmap brief out."
-*Target:* reduce from [FILL: ~2 days] manual → **< 15 minutes** assisted.
+*Target:* reduce from ~2 days manual → **< 15 minutes** assisted.
 ### Quality metrics (the ones that prove the AI is trustworthy)
 | Metric | What it measures | Target | Actual |
 |---|---|---|---|
@@ -83,10 +83,10 @@ Product teams receive feedback through many channels at once — app-store and P
 ### Trust & efficiency metrics
 | Metric | What it measures | Target | Actual |
 |---|---|---|---|
-| Human-acceptance rate | % of agent-suggested priorities the PM keeps without override | ≥ 70% | [FILL] |
-| Review-flag precision | Of items flagged for human review, % that genuinely needed it | ≥ 60% | [FILL] |
-| Cost per run | API spend to process one full batch | < $[FILL] | [FILL] |
-| Latency per run | Wall-clock time for 30 items | < 2 min | [FILL] |
+| Human-acceptance rate | % of agent-suggested priorities the PM keeps without override | ≥ 70% | — (not instrumented in v1)|
+| Review-flag precision | Of items flagged for human review, % that genuinely needed it | ≥ 60% | — (not instrumented in v1) |
+| Cost per run | API spend to process one full batch | < $0.1 | $0.02 |
+| Latency per run | Wall-clock time for 30 items | < 2 min | 42.2s |
 > **The metric I'd optimize first** is hallucination rate, because trust is the whole product. A fast, cheap brief that invents a theme is worse than useless — it actively misleads a roadmap decision. Speed and cost come after correctness.
 ---
 ## 6. How it works
@@ -215,7 +215,7 @@ Exec dashboards, non-text feedback, multi-language, real-time streaming — out 
 ## 13. Getting started
 ```bash
 # 1. Clone
-git clone https://github.com/[your-username]/signal.git
+git clone https://github.com/Faraz07/signal.git
 cd signal
 
 # 2. Install dependencies
@@ -245,7 +245,7 @@ The app is deploy-ready — no extra config. To put it live:
 
 1. **Push to GitHub** (the local repo has no remote yet):
    ```bash
-   git remote add origin https://github.com/<your-username>/signal.git
+   git remote add origin https://github.com/faraz07/signal.git
    git push -u origin main
    ```
 2. **Import to Vercel** — at [vercel.com/new](https://vercel.com/new), select the repo. The Next.js preset is auto-detected; nothing to change.
@@ -308,12 +308,12 @@ shared scoring formula.
 | Level | Label | Definition | Example |
 |---|---|---|---|
 | 4 | Critical | Blocks core use; data loss; churn risk | Payment fails at checkout, so the order can't be completed |
-| 3 | High | Major friction; frequent workaround needed | Search returns nothing for items that are in stock, so customers can't find productsSearch returns nothing for items that are in stock, so customers can't find products |
+| 3 | High | Major friction; frequent workaround needed | Search returns nothing for items that are in stock, so customers can't find products |
 | 2 | Medium | Noticeable annoyance; not blocking | Product images load slowly on the listing page |
 | 1 | Low | Cosmetic / nice-to-have | The wishlist icon is hard to spot in the top nav |
 ### Sample prompt (excerpt)
-CLASSIFY_SYSTEM_AGENT = `You are a precise product-feedback analyst for a direct-to-consumer e-commerce store.
-Analyze ONE piece of user feedback. Be literal — judge only what the text says, do not invent problems.
+CLASSIFY_SYSTEM_AGENT = '''You are a precise product-feedback analyst for a direct-to-consumer e-commerce store.
+Analyze ONE piece of user feedback. Be literal — judge only what the text says, do not invent problems.''';
 
 ${SEVERITY_RUBRIC}
 
